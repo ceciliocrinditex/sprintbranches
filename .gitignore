@@ -1,0 +1,13 @@
+# Editor
+.vscode
+# Build
+/dist
+# Local config
+.npmrc
+# Logs
+*.log
+*.heapsnapshot
+# Dependencies
+node_modules
+# Custom
+config.json
