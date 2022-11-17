@@ -68,12 +68,12 @@ async function init() {
 
   let deleteBranches = false;
   const wantDeleteBranches = await new Promise((resolve) => {
-    rl.question("\nWant to delete existing branches? (Y or Yes) or (N): ", resolve);
+    rl.question("\nDelete existing branches? (Y) or (N): ", resolve);
   });
 
   if (checkAnswer(wantDeleteBranches)) {
     const confirmDeleteBranches = await new Promise((resolve) => {
-      rl.question("Are you sure? (Y or Yes) or (N): ", resolve);
+      rl.question("\nAre you sure? (Y) or (N): ", resolve);
     });
 
     deleteBranches = checkAnswer(confirmDeleteBranches);
@@ -83,9 +83,7 @@ async function init() {
 
   console.info("\nNumber of repositories:\x1b[1m", config.repositories.length, "\x1b[0m");
 
-  console.info("Number of branches:\x1b[1m", config.branches.length, "\x1b[0m");
-
-  console.info("\n-----------------------------\n");
+  console.info("Number of branches:\x1b[1m", config.branches.length, "\x1b[0m\n");
 
   for (const repository of config.repositories) {
     const branches = await octokit.request(`GET /repos/{owner}/{repo}/git/refs/heads`, {
