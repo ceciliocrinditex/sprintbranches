@@ -1,98 +1,94 @@
-const readline = require("readline");
-const config = require("./config.json");
-const { Octokit } = require("@octokit/core");
-const { clear } = require("node:console");
+const readline = require("readline")
+const config = require("./config.json")
+const { Octokit } = require("@octokit/core")
+const { clear } = require("node:console")
 
-const REQUIRED_NODE_VERSION = 10;
+const REQUIRED_NODE_VERSION = 10
 
 async function checkRequirements() {
-  const nodeVersion = process.version.split("v")[1];
-  const majorNodeVersion = Number(nodeVersion.split(".")[0]);
+  const nodeVersion = process.version.split("v")[1]
+  const majorNodeVersion = Number(nodeVersion.split(".")[0])
 
   if (majorNodeVersion < REQUIRED_NODE_VERSION) {
-    console.warn(`Using a node version lower than ${REQUIRED_NODE_VERSION} could cause problems\n`);
+    console.warn(`Using a node version lower than ${REQUIRED_NODE_VERSION} could cause problems\n`)
   }
 
   if (!config.repositories || !config.repositories.length > 0) {
-    console.error("You need to add the repositories");
-    process.exit(1);
+    console.error("You need to add the repositories")
+    process.exit(1)
   }
 
   if (!config.branches || !config.branches.length > 0) {
-    console.error("You need to add the branches");
-    process.exit(1);
+    console.error("You need to add the branches")
+    process.exit(1)
   }
 
   if (!config.token) {
-    console.error("You need to add a Github token");
-    process.exit(1);
+    console.error("You need to add a Github token")
+    process.exit(1)
   }
 
   if (!config.branchFrom) {
-    console.error("You need to add a branch");
-    process.exit(1);
+    console.error("You need to add a branch")
+    process.exit(1)
   }
 
   if (!config.owner) {
-    console.error("You need to add a owner");
-    process.exit(1);
+    console.error("You need to add a owner")
+    process.exit(1)
   }
 }
 
 function checkAnswer(answer) {
-  if (answer.toLowerCase().includes("y") || answer.toLowerCase().includes("yes")) {
-    return true;
-  }
-
-  return false;
+  if (answer.toLowerCase().includes("y") || answer.toLowerCase().includes("yes")) return true
 }
 
 async function init() {
-  clear();
+  clear()
 
-  console.time("Execution time");
+  console.time("Execution time")
 
-  await checkRequirements();
+  await checkRequirements()
 
   // const tokenBuffer = Buffer.from(config.token, "base64");
   // const tokenDecoded = tokenBuffer.toString("utf-8");
 
   const octokit = new Octokit({
     auth: config.token,
-  });
+  })
 
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-  });
+  })
 
-  let deleteBranches = false;
+  let deleteBranches = false
   const wantDeleteBranches = await new Promise((resolve) => {
-    rl.question("\nDelete existing branches? (Y) or (N): ", resolve);
-  });
+    rl.question("\nDelete existing branches? (Y) or (N): ", resolve)
+  })
 
   if (checkAnswer(wantDeleteBranches)) {
     const confirmDeleteBranches = await new Promise((resolve) => {
-      rl.question("\nAre you sure? (Y) or (N): ", resolve);
-    });
+      rl.question("\nAre you sure? (Y) or (N): ", resolve)
+    })
 
-    deleteBranches = checkAnswer(confirmDeleteBranches);
+    deleteBranches = checkAnswer(confirmDeleteBranches)
   }
 
-  rl.close();
+  rl.close()
 
-  console.info("\nNumber of repositories:\x1b[1m", config.repositories.length, "\x1b[0m");
+  console.info("\nNumber of repositories:\x1b[1m", config.repositories.length, "\x1b[0m")
 
-  console.info("Number of branches:\x1b[1m", config.branches.length, "\x1b[0m\n");
+  console.info("Number of branches:\x1b[1m", config.branches.length, "\x1b[0m\n")
 
   for (const repository of config.repositories) {
     const branches = await octokit.request(`GET /repos/{owner}/{repo}/git/refs/heads`, {
       owner: config.owner,
       repo: repository,
-    });
+    })
 
-    let sha;
-    let remoteBranchExists = false;
+    let sha
+    let remoteBranchExists = false
     for (const branch of config.branches) {
       for (const remoteBranch of branches.data) {
         if (remoteBranch.ref.includes(branch)) {
@@ -100,33 +96,33 @@ async function init() {
             await octokit.request("DELETE /repos/{owner}/{repo}/git/refs/{ref}", {
               owner: config.owner,
               repo: repository,
-              ref: `heads/${branch}`,
-            });
+              ref: config.prevSuffixSprintName ? `heads/${branch}-${config.prevSuffixSprintName}` : `heads/${branch}`,
+            })
 
-            continue;
+            continue
           }
 
-          console.warn(`"${branch}" already exists in ${repository}`);
-          remoteBranchExists = true;
-          continue;
+          console.warn(`"${branch}" already exists in ${repository}`)
+          remoteBranchExists = true
+          continue
         }
 
-        if (remoteBranch.ref.includes(config.branchFrom)) sha = remoteBranch.object.sha;
+        if (remoteBranch.ref.includes(config.branchFrom)) sha = remoteBranch.object.sha
       }
 
-      if (remoteBranchExists) continue;
+      if (remoteBranchExists) continue
 
-      await octokit.request(`POST /repos/{owner}/{repo}/git/refs`, {
+      await octokit.request("POST /repos/{owner}/{repo}/git/refs", {
         owner: config.owner,
         repo: repository,
-        ref: `refs/heads/${branch}`,
+        ref: config.suffixSprintName ? `refs/heads/${branch}-${config.suffixSprintName}` : `refs/heads/${branch}`,
         sha,
-      });
+      })
     }
   }
 
-  console.info("\n\x1b[32m\x1b[1mDone!\x1b[0m\n");
-  console.timeEnd("Execution time");
+  console.info("\n\x1b[32m\x1b[1mDone!\x1b[0m\n")
+  console.timeEnd("Execution time")
 }
 
-init();
+init()
