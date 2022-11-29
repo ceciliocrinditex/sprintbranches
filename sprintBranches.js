@@ -96,7 +96,7 @@ async function init() {
             await octokit.request("DELETE /repos/{owner}/{repo}/git/refs/{ref}", {
               owner: config.owner,
               repo: repository,
-              ref: config.prevSuffixSprintName ? `heads/${branch}-${config.prevSuffixSprintName}` : `heads/${branch}`,
+              ref: config.prevSuffixSprintNumber ? `heads/${branch}-${config.prevSuffixSprintNumber}` : `heads/${branch}`,
             })
 
             continue
@@ -115,7 +115,7 @@ async function init() {
       await octokit.request("POST /repos/{owner}/{repo}/git/refs", {
         owner: config.owner,
         repo: repository,
-        ref: config.suffixSprintName ? `refs/heads/${branch}-${config.suffixSprintName}` : `refs/heads/${branch}`,
+        ref: config.suffixSprintNumber ? `refs/heads/${branch}-${config.suffixSprintNumber}` : `refs/heads/${branch}`,
         sha,
       })
     }
